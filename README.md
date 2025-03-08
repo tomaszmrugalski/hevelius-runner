@@ -92,16 +92,21 @@ hevelius-runner/
 └── requirements.txt
 ```
 
+## Generating a template advanced sequence file
+
+Open NINA, click Sequencer, then Advanced Sequencer.
+
+Edit the sequence as needed. Make sure to add at least one target.
+The target MUST have its name set to "TARGET1". Click Save.
+
+The file should be save in the templates folder. If the file name is not provided as an argument,
+the application will use "hevelius.json" by default.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## License
-
-[Add your chosen license here]
-
 ## Acknowledgments
 
 - NINA (Nighttime Imaging 'N' Astronomy) software
-- [Add other acknowledgments as needed]
 

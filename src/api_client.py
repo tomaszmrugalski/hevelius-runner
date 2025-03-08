@@ -139,7 +139,9 @@ class APIClient:
         """
         try:
             url = urljoin(self.base_url, 'night-plan')
-            params = {'date': date}
+
+            # TODO: Hardcoded scope_id=3 for now
+            params = {'scope_id': 3}  # {'date': date}
             
             self.logger.info(f"Fetching night plan for date: {date}")
             response = requests.get(
@@ -150,9 +152,12 @@ class APIClient:
                 headers=self._get_auth_headers()  # Add authentication headers
             )
             response.raise_for_status()
+
+            response_json = response.json()
             
-            tasks = response.json()
+            tasks = response_json['tasks']
             self.logger.info(f"Retrieved {len(tasks)} tasks for {date}")
+            self.logger.debug(f"Tasks: {tasks}")
             return tasks
             
         except requests.RequestException as e:
