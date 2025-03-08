@@ -36,7 +36,7 @@ cd hevelius-runner
 
 ```
 python -m venv venv
-source venv\Scripts\activate
+venv\Scripts\Activate
 ```
 
 3. Install required packages:
