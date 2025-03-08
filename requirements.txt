@@ -1,0 +1,7 @@
+configparser
+requests
+psycopg2-binary
+watchdog
+python-json-logger
+psutil
+pip-system-certs  # Needed for requests to not complain about SSL certificate
