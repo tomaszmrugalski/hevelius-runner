@@ -28,9 +28,11 @@ It is a very early work in progress.
 
 1. Clone the repository:
 
-bash
+
+```bash
 git clone https://github.com/tomaszmrugalski/hevelius-runner.git
 cd hevelius-runner
+```
 
 2. Create and activate virtual environment:
 
@@ -58,7 +60,7 @@ pip install -r requirements.txt
 
 Run the application:
 ```bash
-python src/main.py
+python src/hevelius-runner.py
 ```
 
 The application will:
