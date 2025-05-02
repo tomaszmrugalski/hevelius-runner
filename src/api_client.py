@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from urllib.parse import urljoin
 import hashlib
 from dataclasses import dataclass
+import certifi
 
 # TODO:
 # Figure out what's wrong with LetsEncrypt certificate on hevelius.borowka.space
@@ -29,7 +30,7 @@ class APIClient:
     def __init__(self, config: Dict[str, str]):
         """
         Initialize API client with configuration.
-        
+
         Args:
             config: Dictionary containing 'base_url', 'timeout', 'username', and 'password' keys
         """
@@ -41,6 +42,15 @@ class APIClient:
         self._username = config['username']
         self._password = config['password']
         self._token: Optional[str] = None
+
+        # Configure requests to use system certificates
+        if self.verify_ssl:
+            self.session = requests.Session()
+            self.session.verify = certifi.where()
+        else:
+            self.session = requests.Session()
+            self.session.verify = False
+            self.logger.warning("SSL verification is disabled. This is not recommended for production use.")
 
     def _get_auth_headers(self) -> Dict[str, str]:
         """Get authentication headers if token is available."""
@@ -70,11 +80,10 @@ class APIClient:
             }
             
             self.logger.info(f"Authenticating user {self._username}")
-            response = requests.post(
+            response = self.session.post(
                 url,
                 json=payload,
-                timeout=self.timeout,
-                verify=self.verify_ssl
+                timeout=self.timeout
             )
             response.raise_for_status()
             
@@ -108,10 +117,9 @@ class APIClient:
             url = urljoin(self.base_url, 'version')
             
             self.logger.info(f"Checking backend connectivity ({url})")
-            response = requests.get(
+            response = self.session.get(
                 url,
-                timeout=self.timeout,
-                verify=self.verify_ssl  # Add verify parameter
+                timeout=self.timeout
             )
             self.logger.debug(f"API version response: {response.text}")
             response.raise_for_status()
@@ -122,7 +130,6 @@ class APIClient:
         except requests.RequestException as e:
             self.logger.error(f"Failed to retrieve night plan: {str(e)}")
             raise
-
 
     def get_night_plan(self, date: str) -> List[Dict[str, Any]]:
         """
@@ -144,12 +151,11 @@ class APIClient:
             params = {'scope_id': 3}  # {'date': date}
             
             self.logger.info(f"Fetching night plan for date: {date}")
-            response = requests.get(
+            response = self.session.get(
                 url,
                 params=params,
                 timeout=self.timeout,
-                verify=self.verify_ssl,
-                headers=self._get_auth_headers()  # Add authentication headers
+                headers=self._get_auth_headers()
             )
             response.raise_for_status()
 
@@ -189,7 +195,7 @@ class APIClient:
             }
             
             self.logger.info(f"Updating task {task_id} with status: {status}")
-            response = requests.post(
+            response = self.session.post(
                 url,
                 json=payload,
                 timeout=self.timeout
@@ -217,23 +223,33 @@ class APIClient:
             requests.RequestException: If the API call fails
         """
         try:
-            url = urljoin(self.base_url, f'/task-status/{task_id}')
+            url = urljoin(self.base_url, '/api/task-get')
             
             self.logger.info(f"Checking status for task: {task_id}")
-            response = requests.get(
+            response = self.session.get(
                 url,
-                timeout=self.timeout
+                params={'task_id': task_id},
+                timeout=self.timeout,
+                headers=self._get_auth_headers()
             )
             response.raise_for_status()
             
-            status = response.json().get('status')
+            data = response.json()
+            if not data.get('status'):
+                self.logger.error(f"Task {task_id} not found: {data.get('msg')}")
+                return None
+
+            task = data.get('task')
+            if not task:
+                return None
+
+            status = task.get('state')
             self.logger.debug(f"Task {task_id} status: {status}")
             return status
             
         except requests.RequestException as e:
             self.logger.error(f"Failed to check task status: {str(e)}")
             raise
-
 
     def connect(self):
         """Initialize connection to the API."""
